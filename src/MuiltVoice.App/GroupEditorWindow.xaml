@@ -1,0 +1,415 @@
+<Window x:Class="MuiltVoice.App.GroupEditorWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="clr-namespace:MuiltVoice.App.ViewModels"
+        xmlns:app="clr-namespace:MuiltVoice.App"
+        mc:Ignorable="d"
+        Title="编辑路由"
+        Style="{StaticResource WindowBase}"
+        Height="820" Width="860" MinHeight="620" MinWidth="720"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="CanResize"
+        Background="{StaticResource BrushBackground}"
+        d:DataContext="{d:DesignInstance Type=vm:GroupViewModel, IsDesignTimeCreatable=False}">
+    <Window.Resources>
+        <app:BoolToVisibilityHidden x:Key="Bool2Collapsed"/>
+        <app:LevelToWidthConverter x:Key="LevelWidth"/>
+        <Style TargetType="CheckBox" x:Key="ChkBox">
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Foreground" Value="{StaticResource BrushTextPrimary}"/>
+        </Style>
+        <!-- 数字输入框：左对齐、紧凑 -->
+        <Style TargetType="TextBox" x:Key="NumBox" BasedOn="{StaticResource BoxBasic}">
+            <Setter Property="TextAlignment" Value="Left"/>
+            <Setter Property="Width" Value="110"/>
+            <Setter Property="HorizontalAlignment" Value="Left"/>
+        </Style>
+
+        <!-- 共享：设备行 DataTemplate（通过 DataTemplate 资源 key 来显式加载，不依赖 DataType 自动匹配） -->
+        <DataTemplate x:Key="InputDeviceRowTemplate" DataType="{x:Type vm:DeviceViewModel}">
+            <Border Style="{StaticResource DeviceRow}">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="8"/>
+                        <ColumnDefinition Width="*" MinWidth="200"/>
+                        <ColumnDefinition Width="14"/>
+                        <ColumnDefinition Width="Auto" MinWidth="100"/>
+                        <ColumnDefinition Width="14"/>
+                        <ColumnDefinition Width="*" MinWidth="120"/>
+                        <ColumnDefinition Width="10"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <CheckBox Grid.Column="0" Style="{StaticResource ChkBox}"
+                              IsChecked="{Binding IsSelected, Mode=TwoWay}"/>
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis"
+                                   FontSize="13" FontWeight="SemiBold"
+                                   Foreground="{StaticResource BrushTextPrimary}"
+                                   VerticalAlignment="Center"/>
+                        <Border CornerRadius="999" Margin="6,0,0,0" Padding="8,2"
+                                Visibility="{Binding IsLoopback, Converter={StaticResource Bool2Collapsed}}"
+                                VerticalAlignment="Center">
+                            <Border.Background>
+                                <SolidColorBrush Color="#E89ABE" Opacity="0.18"/>
+                            </Border.Background>
+                            <TextBlock Text="系统声音" FontSize="10" FontWeight="SemiBold"
+                                       Foreground="{StaticResource BrushAccent}"/>
+                        </Border>
+                        <Border CornerRadius="999" Margin="6,0,0,0" Padding="8,2"
+                                Visibility="{Binding IsCable, Converter={StaticResource Bool2Collapsed}}"
+                                VerticalAlignment="Center">
+                            <Border.Background>
+                                <SolidColorBrush Color="#79A6FF" Opacity="0.18"/>
+                            </Border.Background>
+                            <TextBlock Text="Cable" FontSize="10" FontWeight="SemiBold" Foreground="#3C6DC1"/>
+                        </Border>
+                    </StackPanel>
+                    <Grid Grid.Column="4" Width="100" VerticalAlignment="Center" Height="6">
+                        <Border Style="{StaticResource MeterTrack}" Opacity="0.9"/>
+                        <Border Style="{StaticResource MeterFill}"
+                                Width="{Binding PeakLevel, Converter={StaticResource LevelWidth}, ConverterParameter=100.0}"/>
+                    </Grid>
+                    <Slider Grid.Column="6" Style="{StaticResource SliderVol}"
+                            Minimum="0" Maximum="2" SmallChange="0.01"
+                            Value="{Binding Volume, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                            VerticalAlignment="Center"/>
+                    <ToggleButton Grid.Column="8"
+                                  IsChecked="{Binding IsMuted, Mode=TwoWay}"
+                                  Content="🔇" Foreground="{StaticResource BrushTextSecondary}"
+                                  Padding="8,4" ToolTip="静音"/>
+                </Grid>
+            </Border>
+        </DataTemplate>
+
+        <DataTemplate x:Key="OutputDeviceRowTemplate" DataType="{x:Type vm:DeviceViewModel}">
+            <Border Style="{StaticResource DeviceRow}">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="8"/>
+                        <ColumnDefinition Width="*" MinWidth="200"/>
+                        <ColumnDefinition Width="14"/>
+                        <ColumnDefinition Width="Auto" MinWidth="100"/>
+                        <ColumnDefinition Width="14"/>
+                        <ColumnDefinition Width="*" MinWidth="120"/>
+                        <ColumnDefinition Width="10"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="6"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <CheckBox Grid.Column="0" Style="{StaticResource ChkBox}"
+                              IsChecked="{Binding IsSelected, Mode=TwoWay}"/>
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis"
+                                   FontSize="13" FontWeight="SemiBold"
+                                   Foreground="{StaticResource BrushTextPrimary}"
+                                   VerticalAlignment="Center"/>
+                        <Border CornerRadius="999" Margin="6,0,0,0" Padding="8,2"
+                                Visibility="{Binding IsMaster, Converter={StaticResource Bool2Collapsed}}"
+                                VerticalAlignment="Center">
+                            <Border.Background>
+                                <SolidColorBrush Color="#2DA985" Opacity="0.16"/>
+                            </Border.Background>
+                            <TextBlock Text="主输出" FontSize="10" FontWeight="SemiBold"
+                                       Foreground="{StaticResource BrushPrimary}"/>
+                        </Border>
+                        <Border CornerRadius="999" Margin="6,0,0,0" Padding="8,2"
+                                Visibility="{Binding IsCable, Converter={StaticResource Bool2Collapsed}}"
+                                VerticalAlignment="Center">
+                            <Border.Background>
+                                <SolidColorBrush Color="#79A6FF" Opacity="0.18"/>
+                            </Border.Background>
+                            <TextBlock Text="Cable" FontSize="10" FontWeight="SemiBold" Foreground="#3C6DC1"/>
+                        </Border>
+                        <Border CornerRadius="999" Margin="6,0,0,0" Padding="8,2"
+                                Visibility="{Binding IsExclusive, Converter={StaticResource Bool2Collapsed}}"
+                                VerticalAlignment="Center">
+                            <Border.Background>
+                                <SolidColorBrush Color="#E8A04A" Opacity="0.20"/>
+                            </Border.Background>
+                            <TextBlock Text="🔒独占" FontSize="10" FontWeight="SemiBold" Foreground="#C77B1F"/>
+                        </Border>
+                    </StackPanel>
+                    <TextBlock Grid.Column="4" VerticalAlignment="Center" HorizontalAlignment="Left"
+                               FontSize="11" Foreground="{StaticResource BrushTextSecondary}"
+                               Text="{Binding BufferedBytes, StringFormat=缓冲 {0:0} B, Mode=OneWay}"/>
+                    <Slider Grid.Column="6" Style="{StaticResource SliderVol}"
+                            Minimum="0" Maximum="2" SmallChange="0.01"
+                            Value="{Binding Volume, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                            VerticalAlignment="Center"/>
+                    <ToggleButton Grid.Column="8"
+                                  IsChecked="{Binding IsMuted, Mode=TwoWay}"
+                                  Content="🔇" Foreground="{StaticResource BrushTextSecondary}"
+                                  Padding="8,4" ToolTip="静音"/>
+                    <!-- 独占模式开关（设备粒度） -->
+                    <ToggleButton Grid.Column="10"
+                                  IsChecked="{Binding IsExclusive, Mode=TwoWay}"
+                                  Foreground="{StaticResource BrushTextSecondary}"
+                                  Padding="8,4" ToolTip="WASAPI 独占模式（方案C）：占用此设备，其他程序无法使用。延迟可降到 ~10-30ms。失败自动回退共享。">
+                        <ToggleButton.Style>
+                            <Style TargetType="ToggleButton">
+                                <Setter Property="Content" Value="🔓"/>
+                                <Style.Triggers>
+                                    <Trigger Property="IsChecked" Value="True">
+                                        <Setter Property="Content" Value="🔒"/>
+                                        <Setter Property="Foreground" Value="#C77B1F"/>
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </ToggleButton.Style>
+                    </ToggleButton>
+                </Grid>
+            </Border>
+        </DataTemplate>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <Border Grid.Row="0" Style="{StaticResource Toolbar}" Margin="0,0,0,6">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="20"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" Text="路由名称：" VerticalAlignment="Center"
+                           Foreground="{StaticResource BrushTextSecondary}"/>
+                <TextBox Grid.Column="2" x:Name="NameBox" Style="{StaticResource BoxBasic}"
+                         Text="{Binding Name, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+            </Grid>
+        </Border>
+
+        <!-- Body: Inputs / Outputs -->
+        <Grid Grid.Row="1" Margin="20,4,20,8">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="14"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <Border Grid.Column="0" Style="{StaticResource InlineCard}" Padding="14">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="8"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <Grid Grid.Row="0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" FontSize="15" FontWeight="SemiBold" Text="🎙 输入设备"
+                                   Foreground="{StaticResource BrushTextPrimary}"/>
+                        <TextBlock Grid.Column="1" FontSize="12" Foreground="{StaticResource BrushTextSecondary}"
+                                   Text="{Binding SelectedInputCount, StringFormat={}已选 {0} 个}"/>
+                    </Grid>
+                    <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" CanContentScroll="False">
+                        <ItemsControl ItemsSource="{Binding Inputs}"
+                                      ItemTemplate="{StaticResource InputDeviceRowTemplate}"/>
+                    </ScrollViewer>
+                </Grid>
+            </Border>
+            <Border Grid.Column="2" Style="{StaticResource InlineCard}" Padding="14">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="8"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <Grid Grid.Row="0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" FontSize="15" FontWeight="SemiBold" Text="🔊 输出设备"
+                                   Foreground="{StaticResource BrushTextPrimary}"/>
+                        <TextBlock Grid.Column="1" FontSize="12" Foreground="{StaticResource BrushTextSecondary}"
+                                   Text="{Binding SelectedOutputCount, StringFormat={}已选 {0} 个}"/>
+                    </Grid>
+                    <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" CanContentScroll="False">
+                        <ItemsControl ItemsSource="{Binding Outputs}"
+                                      ItemTemplate="{StaticResource OutputDeviceRowTemplate}"/>
+                    </ScrollViewer>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- 高级设置折叠面板：AudioSettings（每路由独立） -->
+        <Grid Grid.Row="2" Margin="20,0,20,12">
+            <Border Style="{StaticResource InlineCard}" Padding="14">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <!-- 标题 + 说明 -->
+                    <Grid Grid.Row="0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" FontSize="14" FontWeight="SemiBold"
+                                   Text="⚙ 高级 · 音频参数（每路由独立）"
+                                   Foreground="{StaticResource BrushTextPrimary}"/>
+                        <TextBlock Grid.Column="1" FontSize="11" VerticalAlignment="Center"
+                                   Foreground="{StaticResource BrushTextSecondary}"
+                                   Text="独占模式在输出设备行右侧 🔒/🔓 按钮切换（设备粒度）；此处仅配置延迟/缓冲参数"/>
+                    </Grid>
+                    <Grid Grid.Row="1" Margin="0,10,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="10"/>
+                            <ColumnDefinition Width="220"/>
+                            <ColumnDefinition Width="30"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="10"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <!-- 预设下拉 -->
+                        <TextBlock Grid.Column="0" VerticalAlignment="Center"
+                                   Foreground="{StaticResource BrushTextSecondary}"
+                                   Text="预设方案："/>
+                        <ComboBox Grid.Column="2" x:Name="PresetBox"
+                                  SelectedValuePath="Value"
+                                  DisplayMemberPath="Display"/>
+                        <TextBlock Grid.Column="4" VerticalAlignment="Center"
+                                   Foreground="{StaticResource BrushTextSecondary}"
+                                   Text="预设说明："/>
+                        <TextBlock Grid.Column="6" x:Name="PresetHint" VerticalAlignment="Center"
+                                   FontSize="12" Foreground="{StaticResource BrushTextPrimary}"
+                                   TextWrapping="Wrap"/>
+                    </Grid>
+                    <!-- 参数表 -->
+                    <Grid Grid.Row="2" Margin="0,14,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="14"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid Grid.Column="0">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="10"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="10"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <!-- Render Latency -->
+                            <Grid Grid.Row="0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="130"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" VerticalAlignment="Center"
+                                           Foreground="{StaticResource BrushTextSecondary}"
+                                           Text="渲染延迟（主）："/>
+                                <TextBox Grid.Column="1" x:Name="RenderLatencyMsBox" Style="{StaticResource NumBox}"/>
+                                <TextBlock Grid.Column="2" VerticalAlignment="Center" Margin="6,0,0,0"
+                                           Foreground="{StaticResource BrushTextSecondary}"
+                                           Text="ms（5~500）"/>
+                            </Grid>
+                            <!-- InputBuffer -->
+                            <Grid Grid.Row="2">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="130"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" VerticalAlignment="Center"
+                                           Foreground="{StaticResource BrushTextSecondary}"
+                                           Text="输入缓冲："/>
+                                <TextBox Grid.Column="1" x:Name="InputBufferMsBox" Style="{StaticResource NumBox}"/>
+                                <TextBlock Grid.Column="2" VerticalAlignment="Center" Margin="6,0,0,0"
+                                           Foreground="{StaticResource BrushTextSecondary}"
+                                           Text="ms（10~5000）"/>
+                            </Grid>
+                            <!-- MeterPoll -->
+                            <Grid Grid.Row="4">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="130"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" VerticalAlignment="Center"
+                                           Foreground="{StaticResource BrushTextSecondary}"
+                                           Text="电平轮询："/>
+                                <TextBox Grid.Column="1" x:Name="MeterPollMsBox" Style="{StaticResource NumBox}"/>
+                                <TextBlock Grid.Column="2" VerticalAlignment="Center" Margin="6,0,0,0"
+                                           Foreground="{StaticResource BrushTextSecondary}"
+                                           Text="ms（30~500）"/>
+                            </Grid>
+                        </Grid>
+                        <Grid Grid.Column="2">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="10"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <!-- Render Latency Fallback -->
+                            <Grid Grid.Row="0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="140"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" VerticalAlignment="Center"
+                                           Foreground="{StaticResource BrushTextSecondary}"
+                                           Text="渲染延迟（兜底）："/>
+                                <TextBox Grid.Column="1" x:Name="RenderLatencyFallbackMsBox" Style="{StaticResource NumBox}"/>
+                                <TextBlock Grid.Column="2" VerticalAlignment="Center" Margin="6,0,0,0"
+                                           Foreground="{StaticResource BrushTextSecondary}"
+                                           Text="ms（≥主延迟）"/>
+                            </Grid>
+                            <!-- TapBuffer -->
+                            <Grid Grid.Row="2">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="140"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" VerticalAlignment="Center"
+                                           Foreground="{StaticResource BrushTextSecondary}"
+                                           Text="扇出端缓冲："/>
+                                <TextBox Grid.Column="1" x:Name="TapBufferMsBox" Style="{StaticResource NumBox}"/>
+                                <TextBlock Grid.Column="2" VerticalAlignment="Center" Margin="6,0,0,0"
+                                           Foreground="{StaticResource BrushTextSecondary}"
+                                           Text="ms（10~5000）"/>
+                            </Grid>
+                        </Grid>
+                    </Grid>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- Footer -->
+        <Border Grid.Row="3" Style="{StaticResource StatusBar}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="10"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" VerticalAlignment="Center" Foreground="{StaticResource BrushTextSecondary}" FontSize="12">
+                    <Run>提示：至少 1 输入 + 1 输出。主输出 = 列表中第一个已勾选的输出。</Run>
+                    <LineBreak/>
+                    <Run Text="{Binding LastError, StringFormat={}错误：{0}, Mode=OneWay}" Foreground="{StaticResource BrushDanger}"/>
+                </TextBlock>
+                <Button Grid.Column="1" Content="取消" Style="{StaticResource BtnGhost}" Click="CancelClick"/>
+                <Button Grid.Column="3" Content="完成" Style="{StaticResource BtnPrimary}" Click="OkClick"/>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>

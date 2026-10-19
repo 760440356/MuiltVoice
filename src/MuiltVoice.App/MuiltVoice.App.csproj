@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net9.0-windows10.0.19041.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <LangVersion>latest</LangVersion>
+    <AssemblyName>MuiltVoice</AssemblyName>
+    <RootNamespace>MuiltVoice.App</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\MuiltVoice.Audio\MuiltVoice.Audio.csproj" />
+    <ProjectReference Include="..\MuiltVoice.Config\MuiltVoice.Config.csproj" />
+  </ItemGroup>
+
+</Project>

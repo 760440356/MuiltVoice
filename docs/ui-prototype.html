@@ -1,0 +1,1073 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>MuiltVoice — 多路由组 UI 原型（列表+弹窗）</title>
+<style>
+  :root {
+    /* 清新浅色主题：雾蓝白底 + 柔和主色 */
+    --bg:        #F6F8FB;        /* 背景：浅雾蓝 */
+    --bg-soft:   #FFFFFF;        /* 面板纯白 */
+    --panel:     #FFFFFF;
+    --card:      #FFFFFF;
+    --card-hdr:  #F0F4F9;        /* 卡片头：浅蓝灰 */
+    --row:       #FAFCFE;        /* 设备行：接近白 */
+    --row-hover: #EEF4FF;        /* 悬停：淡蓝 */
+    --sel:       #E8F0FE;        /* 选中：蓝底 */
+    --border:    #E3E8EF;        /* 边框：淡灰 */
+    --border-hr: #D5DCE4;        /* 分割线 */
+
+    --text:      #2C3E50;        /* 主文字：蓝黑 */
+    --dim:       #64748B;        /* 次要：冷灰 */
+    --xdim:      #94A3B8;        /* 再次：浅灰 */
+
+    --accent:    #3B82F6;        /* 主色：柔和蓝 */
+    --accent-2:  #2563EB;
+    --success:   #10B981;        /* 成功：翡翠绿 */
+    --success-bg:#059669;
+    --danger:    #DC2626;        /* 危险：柔和红 */
+    --danger-bg: #B91C1C;
+    --warn:      #F59E0B;        /* 琥珀 */
+    --running:   #10B981;
+
+    --slider-thumb: #3B82F6;
+    --slider-track: #E3E8EF;
+    --peak: linear-gradient(90deg, #10B981 0%, #10B981 55%, #F59E0B 78%, #EF4444 100%);
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Segoe UI", "Microsoft YaHei", system-ui, sans-serif;
+    font-size: 13px;
+  }
+  .app { padding: 16px; min-height: 100vh; }
+
+  /* ================== 顶部工具栏 ================== */
+  .toolbar { margin-bottom: 16px; }
+  .t-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .t-row + .t-row { margin-top: 8px; }
+  .title {
+    font-size: 19px; font-weight: 700; margin-right: 14px; letter-spacing: 0.2px;
+    background: linear-gradient(90deg, #3B82F6 0%, #10B981 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .status { flex: 1; text-align: center; font-size: 13px; color: var(--dim); min-width: 200px; }
+  .running-ind { color: var(--dim); white-space: nowrap; font-size: 12px; }
+
+  .btn {
+    background: #FFFFFF; color: var(--text);
+    border: 1px solid var(--border);
+    padding: 6px 14px; font-weight: 600; font-size: 13px;
+    cursor: pointer; border-radius: 6px;
+    transition: background 0.12s, transform 0.05s, border-color 0.12s, box-shadow 0.12s;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  }
+  .btn:hover:not(:disabled) {
+    background: #F3F7FD; border-color: #C7D8F3;
+    box-shadow: 0 1px 3px rgba(59, 130, 246, 0.12);
+  }
+  .btn:active:not(:disabled) { transform: scale(0.98); }
+  .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+  .btn-start {
+    background: linear-gradient(180deg, #10B981 0%, #059669 100%);
+    color: #fff; border-color: #059669;
+    box-shadow: 0 1px 2px rgba(16, 185, 129, 0.25);
+  }
+  .btn-start:hover:not(:disabled) {
+    background: linear-gradient(180deg, #34D399 0%, #10B981 100%);
+    border-color: #10B981; color: #fff;
+  }
+  .btn-stop  {
+    background: linear-gradient(180deg, #EF4444 0%, #DC2626 100%);
+    color: #fff; border-color: #DC2626;
+    box-shadow: 0 1px 2px rgba(239, 68, 68, 0.22);
+  }
+  .btn-stop:hover:not(:disabled)  {
+    background: linear-gradient(180deg, #F87171 0%, #EF4444 100%);
+    border-color: #EF4444; color: #fff;
+  }
+  .btn-add   {
+    background: linear-gradient(180deg, #60A5FA 0%, #3B82F6 100%);
+    color: #fff; border-color: #3B82F6;
+    box-shadow: 0 1px 2px rgba(59, 130, 246, 0.25);
+  }
+  .btn-add:hover {
+    background: linear-gradient(180deg, #93C5FD 0%, #60A5FA 100%);
+    border-color: #60A5FA; color: #fff;
+  }
+  .btn-edit  {
+    background: #FFFFFF; border-color: #C7D8F3; color: #2563EB;
+  }
+  .btn-edit:hover { background: #EEF4FF; border-color: #A5C0EE; color: #1D4ED8; }
+  .btn-del   {
+    background: #FFFFFF; border: 1px solid #F3C3C3; color: #DC2626; padding: 4px 8px;
+    box-shadow: none;
+  }
+  .btn-del:hover { background: #FEF2F2; border-color: #FCA5A5; color: #B91C1C; }
+  .btn-lg { padding: 8px 18px; }
+
+  select, input[type="text"] {
+    background: #FFFFFF; color: var(--text);
+    border: 1px solid var(--border);
+    padding: 5px 9px; border-radius: 6px; font-size: 13px;
+    transition: border-color 0.12s, box-shadow 0.12s;
+  }
+  input[type="text"]:hover, select:hover { border-color: #C7D8F3; }
+  input[type="text"]:focus, select:focus {
+    outline: none; border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+  }
+  .profile-sel { width: 180px; }
+  .profile-name { width: 160px; }
+
+  /* ================== 方块列表（主界面核心） ================== */
+  .section-title {
+    font-weight: 700; font-size: 13px; color: var(--text);
+    padding: 6px 4px 10px;
+    border-bottom: 1px solid var(--border-hr);
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .section-title b { color: var(--accent); font-weight: 700; }
+  .section-title .hint { font-weight: 400; color: var(--dim); font-size: 12px; }
+
+  .group-list {
+    margin-top: 12px;
+    display: flex; flex-direction: column; gap: 8px;
+    max-height: calc(100vh - 240px); overflow-y: auto;
+    padding-right: 4px;
+  }
+  .group-list::-webkit-scrollbar { width: 8px; }
+  .group-list::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 4px; }
+
+  .group-row {
+    display: grid;
+    grid-template-columns: Auto 1fr Auto Auto Auto Auto Auto;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    transition: border-color 0.15s, box-shadow 0.15s, background 0.12s;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.035);
+    cursor: default;
+  }
+  .group-row:hover {
+    border-color: #C7D8F3;
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.08);
+  }
+  .group-row.running {
+    border: 1px solid #A7F3D0;
+    background: linear-gradient(90deg, #ECFDF5 0%, #FFFFFF 40%);
+    box-shadow: 0 2px 10px rgba(16, 185, 129, 0.10);
+  }
+  .group-row.running:hover {
+    border-color: #6EE7B7;
+    box-shadow: 0 2px 12px rgba(16, 185, 129, 0.16);
+  }
+
+  .row-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: #CBD5E1;
+    flex: 0 0 10px;
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,0.04);
+  }
+  .group-row.running .row-dot {
+    background: var(--running);
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15), 0 0 6px rgba(16, 185, 129, 0.5);
+    animation: pulse 1.3s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%,100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.65; transform: scale(0.86); }
+  }
+
+  .row-main {
+    display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+    min-width: 0;
+  }
+  .row-name {
+    font-weight: 600; font-size: 14px;
+    max-width: 420px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    color: var(--text);
+  }
+  .row-badges { display: flex; gap: 6px; flex-wrap: wrap; }
+  .badge {
+    font-size: 11px; padding: 3px 10px;
+    border-radius: 999px; font-weight: 600;
+    background: #F1F5F9; color: var(--dim);
+    border: 1px solid transparent;
+  }
+  /* Notion 风格：浅色底 + 彩色文字，标签清新不暗沉 */
+  .badge.in  { background: #EFF6FF; color: #1D4ED8; border-color: #DBEAFE; }
+  .badge.out { background: #F5F3FF; color: #6D28D9; border-color: #EDE9FE; }
+  .badge.st  { background: #ECFDF5; color: #047857; border-color: #A7F3D0; }
+  .badge.sp  { background: #F1F5F9; color: #475569; border-color: #E2E8F0; }
+
+  .row-peak-preview {
+    display: flex; gap: 3px; align-items: center; min-width: 90px;
+    padding: 4px 8px;
+    background: #F8FAFC;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+  }
+  .peak-mini {
+    width: 6px; height: 14px;
+    background: #E2E8F0;
+    border-radius: 2px;
+    position: relative; overflow: hidden;
+  }
+  .peak-mini > div {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    background: var(--peak);
+    height: 0%;
+    transition: height 0.1s linear;
+    border-radius: 2px;
+  }
+  .peak-summary {
+    font-family: "SF Mono", Consolas, monospace; font-size: 11px;
+    color: var(--dim); min-width: 30px; text-align: right;
+    font-weight: 600;
+  }
+
+  .empty-list {
+    padding: 48px 20px;
+    text-align: center;
+    color: var(--dim);
+    font-size: 13px;
+    border: 1.5px dashed #CBD5E1;
+    border-radius: 10px;
+    margin-top: 12px;
+    background: #FFFFFF;
+  }
+
+  /* ================== Modal 弹窗 ================== */
+  .modal-mask {
+    position: fixed; inset: 0;
+    background: rgba(15, 23, 42, 0.35);
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(3px);
+    display: none;
+    align-items: center; justify-content: center;
+    z-index: 100;
+    padding: 20px;
+    animation: fadeIn 0.16s ease-out;
+  }
+  .modal-mask.show { display: flex; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+  .modal {
+    width: 100%; max-width: 980px;
+    max-height: 92vh;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    display: flex; flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(15, 23, 42, 0.18);
+    animation: popIn 0.18s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+  }
+  @keyframes popIn {
+    from { opacity: 0; transform: translateY(8px) scale(0.985); }
+    to   { opacity: 1; transform: translateY(0)   scale(1); }
+  }
+  .modal.running {
+    box-shadow: 0 20px 60px rgba(16, 185, 129, 0.15);
+  }
+  .modal-header {
+    padding: 14px 18px;
+    background: #FFFFFF;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .modal-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: #CBD5E1;
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,0.04);
+  }
+  .modal.running .modal-dot {
+    background: var(--running);
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15), 0 0 6px rgba(16, 185, 129, 0.5);
+    animation: pulse 1.3s ease-in-out infinite;
+  }
+  .modal-name {
+    flex: 1;
+    font-weight: 700; font-size: 15px;
+    background: transparent; color: var(--text);
+    border: 1px solid transparent;
+    padding: 4px 10px; border-radius: 6px;
+  }
+  .modal-name:hover { border-color: #E2E8F0; background: #F8FAFC; }
+  .modal-name:focus {
+    outline: none; border-color: var(--accent); background: #FFFFFF;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+  }
+  .modal-run-label {
+    font-size: 12px; color: var(--dim); font-weight: 600;
+    padding: 2px 8px; border-radius: 999px; background: #F1F5F9;
+  }
+  .modal.running .modal-run-label {
+    color: #047857; background: #ECFDF5;
+  }
+  .modal-close {
+    background: transparent; border: none; color: var(--xdim);
+    font-size: 24px; cursor: pointer; padding: 0 6px; line-height: 1;
+    border-radius: 5px;
+    width: 32px; height: 32px;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.1s, color 0.1s;
+  }
+  .modal-close:hover { color: var(--text); background: #F1F5F9; }
+
+  .modal-body {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr 6px 1fr;
+    min-height: 420px;
+    max-height: 70vh;
+    overflow: hidden;
+  }
+  .col { display: flex; flex-direction: column; min-width: 0; }
+  .col-title {
+    padding: 12px 18px;
+    font-weight: 700; font-size: 12px;
+    letter-spacing: 0.4px; text-transform: uppercase;
+    border-bottom: 1px solid var(--border);
+    background: var(--card-hdr);
+    flex: 0 0 auto;
+    color: var(--dim);
+  }
+  .col-content {
+    padding: 8px 10px 12px;
+    overflow-y: auto; flex: 1; background: #FFFFFF;
+  }
+  .col-content::-webkit-scrollbar { width: 8px; }
+  .col-content::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 4px; }
+  .col-split {
+    background: var(--border); cursor: col-resize;
+    transition: background 0.1s;
+  }
+  .col-split:hover { background: var(--accent); }
+
+  .modal-error {
+    padding: 10px 18px;
+    background: #FEF2F2; color: #B91C1C;
+    border-top: 1px solid #FECACA;
+    display: none; font-size: 12px;
+    font-weight: 500;
+  }
+  .modal.has-error .modal-error { display: block; }
+
+  .modal-footer {
+    padding: 12px 18px;
+    background: #F8FAFC;
+    border-top: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 10px;
+  }
+  .modal-footer-left, .modal-footer-right { display: flex; gap: 6px; align-items: center; }
+  #modalSummary { color: var(--dim); }
+
+  /* ================== 设备行（输入/输出） ================== */
+  .device-row {
+    background: var(--row);
+    border-radius: 8px;
+    padding: 8px 12px;
+    margin: 5px 2px;
+    border: 1px solid var(--border);
+    transition: background 0.1s, border-color 0.12s, box-shadow 0.12s;
+  }
+  .device-row:hover {
+    background: var(--row-hover);
+    border-color: #C7D8F3;
+    box-shadow: 0 1px 3px rgba(59, 130, 246, 0.06);
+  }
+  .device-row.selected {
+    border-color: #93C5FD; background: var(--sel);
+    box-shadow: inset 0 0 0 1px rgba(59, 130, 246, 0.12);
+  }
+
+  .row-top { display: flex; align-items: center; gap: 8px; }
+  .row-bot {
+    display: flex; align-items: center; gap: 8px;
+    margin-top: 6px; padding-left: 24px;
+  }
+  .d-check {
+    width: 16px; height: 16px;
+    cursor: pointer; accent-color: var(--accent);
+  }
+  .d-name {
+    flex: 1;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    min-width: 0;
+    color: var(--text); font-weight: 500;
+  }
+  .tag {
+    font-size: 10px; padding: 2px 7px; border-radius: 999px;
+    font-weight: 600; margin-left: 4px;
+    border: 1px solid transparent;
+  }
+  /* 标签改成 Notion/Linear 风格：浅色底 + 彩色字 */
+  .tag-loop   { background: #FFF7ED; color: #C2410C; border-color: #FFEDD5; }
+  .tag-cable  { background: #ECFEFF; color: #0E7490; border-color: #CFFAFE; }
+  .tag-master { background: #ECFDF5; color: #047857; border-color: #A7F3D0; }
+  .tag-default{ background: #FFFBEB; color: #B45309; border-color: #FDE68A; }
+
+  .vol-slider {
+    flex: 1;
+    -webkit-appearance: none; appearance: none;
+    height: 4px; background: var(--slider-track);
+    border-radius: 2px; outline: none;
+  }
+  .vol-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px; height: 14px; border-radius: 50%;
+    background: var(--slider-thumb);
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(59, 130, 246, 0.25);
+    border: 2px solid #FFFFFF;
+  }
+  .vol-slider::-moz-range-thumb {
+    width: 14px; height: 14px; border-radius: 50%;
+    background: var(--slider-thumb);
+    border: 2px solid #FFFFFF;
+    cursor: pointer;
+  }
+  .vol-pct {
+    width: 44px; text-align: right;
+    font-size: 11px; color: var(--dim); flex: 0 0 44px;
+    font-family: "SF Mono", Consolas, monospace;
+    font-weight: 600;
+  }
+  .mute {
+    display: flex; align-items: center; gap: 3px;
+    font-size: 11px; cursor: pointer; color: var(--dim);
+    font-weight: 500;
+  }
+  .mute:hover { color: var(--text); }
+  .mute input { accent-color: var(--danger); }
+
+  .peak-meter {
+    width: 90px; height: 10px; background: #E2E8F0;
+    border-radius: 3px; overflow: hidden; position: relative;
+    border: 1px solid #CBD5E1; flex: 0 0 90px;
+  }
+  .peak-fill {
+    position: absolute; top: 0; left: 0; bottom: 0; width: 0%;
+    background: var(--peak);
+    transition: width 0.08s linear;
+  }
+  .peak-fill.muted { width: 0% !important; }
+
+  .buf-label {
+    font-size: 11px; color: var(--dim);
+    width: 90px; text-align: right; flex: 0 0 90px;
+    font-family: "SF Mono", Consolas, monospace;
+    overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+    font-weight: 600;
+  }
+
+  .d-empty {
+    padding: 32px 10px; text-align: center;
+    color: var(--xdim); font-size: 12px;
+  }
+
+  /* ================== 底部横幅 ================== */
+  .bottom-area { margin-top: 18px; }
+  .cable-banner {
+    padding: 10px 14px; border-radius: 8px;
+    background: #FFF7ED;
+    color: #9A3412;
+    margin-bottom: 10px; line-height: 1.6;
+    border: 1px solid #FED7AA;
+    font-size: 12px;
+  }
+  .cable-banner.hide { display: none; }
+  .cable-banner a {
+    color: #2563EB; font-weight: 600; text-decoration: none;
+    border-bottom: 1px solid transparent; padding-bottom: 1px;
+  }
+  .cable-banner a:hover { border-bottom-color: #2563EB; }
+  .tip {
+    color: var(--dim); font-size: 12px; line-height: 1.65;
+  }
+  .tip .mb {
+    display: inline-block;
+    background: linear-gradient(90deg, #DBEAFE, #ECFDF5);
+    color: #0F172A;
+    padding: 1px 8px; border-radius: 6px;
+    font-size: 10px; font-weight: 700;
+    margin-right: 6px; vertical-align: middle;
+    border: 1px solid #BFDBFE;
+    letter-spacing: 0.3px;
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- 顶部工具栏 -->
+  <div class="toolbar">
+    <div class="t-row">
+      <div class="title">MuiltVoice</div>
+      <button class="btn" id="btnRefresh">刷新设备</button>
+      <button class="btn btn-add" id="btnAddGroup">+ 添加方块</button>
+      <button class="btn btn-start" id="btnStartAll">▶ 全部开始</button>
+      <button class="btn btn-stop" id="btnStopAll">■ 全部停止</button>
+      <div class="status" id="statusText">就绪：共 4 个方块，0 个运行中（Mock 预览）</div>
+      <div class="running-ind" id="runningInd">运行中: false</div>
+    </div>
+    <div class="t-row">
+      <span style="opacity:0.85">方案：</span>
+      <select class="profile-sel" id="profileSelect">
+        <option selected>会议+监听+直播</option>
+        <option>录音室多对多</option>
+        <option>默认方案</option>
+      </select>
+      <button class="btn" id="btnLoadProfile">加载</button>
+      <span style="opacity:0.85;margin-left:8px">名称：</span>
+      <input type="text" class="profile-name" id="profileName" value="会议+监听+直播"/>
+      <button class="btn" id="btnSaveProfile">保存方案</button>
+    </div>
+  </div>
+
+  <!-- 方块列表（主界面：摘要行 + 编辑按钮） -->
+  <div class="section-title">
+    <span>路由方块</span>
+    <span class="hint">共 <b id="totalCount">4</b> 个，运行中 <b id="runCount">0</b> · 点击「编辑」或名称打开详细设置</span>
+  </div>
+  <div id="groupList" class="group-list"></div>
+
+  <!-- 底部 -->
+  <div class="bottom-area">
+    <div class="cable-banner hide" id="cableBanner">
+      ⚠ 未检测到 VB-Cable。要把混音暴露为虚拟麦克风给其他 App（腾讯会议 / OBS），
+      请安装 VB-Cable：<a href="https://vb-audio.com/Cable/" target="_blank" rel="noreferrer">https://vb-audio.com/Cable/</a>。
+    </div>
+    <div class="tip">
+      <span class="mb">MOCK</span>
+      主界面是方块列表：每行显示运行状态、名称、输入/输出数量、电平等摘要与快速启停。
+      点击「编辑」或名称<strong>打开弹窗</strong>可详细勾选本方块的输入/输出设备、调节音量、启停本方块。
+      顶部「+ 添加方块」新建；「全部开始 / 全部停止」一键批量。
+    </div>
+  </div>
+</div>
+
+<!-- ================================ Modal 弹窗 ================================ -->
+<div class="modal-mask" id="modalMask">
+  <div class="modal" id="modal">
+    <div class="modal-header">
+      <div class="modal-dot" id="modalDot"></div>
+      <input type="text" class="modal-name" id="modalName"/>
+      <span class="modal-run-label" id="modalRunLabel">○ 已停止</span>
+      <button class="btn btn-start" id="modalStartBtn">▶ 启动该方块</button>
+      <button class="btn btn-stop" id="modalStopBtn">■ 停止该方块</button>
+      <button class="modal-close" id="modalCloseBtn" title="关闭">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="col">
+        <div class="col-title">输入设备（麦克风 / Loopback）</div>
+        <div class="col-content" id="modalInputs"></div>
+      </div>
+      <div class="col-split" title="拖动调整宽"></div>
+      <div class="col">
+        <div class="col-title">输出设备（首个选中为主）</div>
+        <div class="col-content" id="modalOutputs"></div>
+      </div>
+    </div>
+    <div class="modal-error" id="modalError"></div>
+    <div class="modal-footer">
+      <div class="modal-footer-left">
+        <button class="btn btn-del" id="modalDeleteBtn">✕ 删除方块</button>
+        <span id="modalSummary" style="opacity:0.7; font-size:11px"></span>
+      </div>
+      <div class="modal-footer-right">
+        <button class="btn" id="modalSaveBtn">💾 保存并关闭</button>
+        <button class="btn" id="modalCancelBtn">关闭</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================ 数据 ============================ */
+const IN_POOL = [
+  { id:"mic-int",  name:"内置麦克风 (Realtek)",        loopback:false, def:true,  cable:false },
+  { id:"mic-ext",  name:"外置麦克风 (Zoom U-22)",      loopback:false, def:false, cable:false },
+  { id:"bt-mic",   name:"蓝牙麦克风 (WH-1000XM5)",     loopback:false, def:false, cable:false },
+  { id:"loopback", name:"系统回放 Loopback",           loopback:true,  def:false, cable:false },
+];
+const OUT_POOL = [
+  { id:"hp-usb",   name:"耳机 (USB Audio)",     cable:false, def:false },
+  { id:"spk-int",  name:"主音箱 (Realtek)",     cable:false, def:true  },
+  { id:"cable-in", name:"CABLE Input",          cable:true,  def:false },
+  { id:"cable-a",  name:"CABLE-A Input",        cable:true,  def:false },
+];
+let _gid = 1000;
+const newId = () => "g" + (_gid++);
+const devUid = () => Math.random().toString(36).slice(2, 10);
+
+function mkDev(pool, selected=false, volume=1.0, muted=false) {
+  return {
+    uid: devUid(), id: pool.id, name: pool.name,
+    loopback: !!pool.loopback, def: !!pool.def, cable: !!pool.cable,
+    selected, volume, muted, peakLevel: 0, bufferedBytes: 0, isMaster: false,
+  };
+}
+
+function mkGroup(name, running, inputs, outputs) {
+  const g = {
+    gid: newId(), name, running,
+    inputs: inputs.map(i => mkDev(IN_POOL.find(p=>p.id===i.pid), i.selected, i.volume, i.muted)),
+    outputs: outputs.map(o => mkDev(OUT_POOL.find(p=>p.id===o.pid), o.selected, o.volume, o.muted)),
+    error: null,
+  };
+  refreshMaster(g);
+  return g;
+}
+
+let groups = [
+  mkGroup("🎤 会议路由", true,
+    [{pid:"mic-int", selected:true, volume:1.20, muted:false}],
+    [{pid:"cable-in", selected:true, volume:1.0, muted:false}]),
+  mkGroup("🎧 监听路由", false,
+    [{pid:"loopback", selected:true, volume:0.85, muted:false}],
+    [{pid:"hp-usb", selected:true, volume:1.0, muted:false}]),
+  mkGroup("📺 直播路由", false,
+    [
+      {pid:"mic-ext",  selected:true, volume:1.00, muted:false},
+      {pid:"loopback", selected:true, volume:0.60, muted:false},
+    ],
+    [
+      {pid:"spk-int",  selected:true, volume:0.90, muted:false},
+      {pid:"cable-in", selected:true, volume:1.00, muted:false},
+    ]),
+  mkGroup("✨ 新方块（可编辑）", false,
+    IN_POOL.map(p => ({pid:p.id, selected:false, volume:1.0, muted:false})),
+    OUT_POOL.map(p => ({pid:p.id, selected:false, volume:1.0, muted:false}))),
+];
+
+function refreshMaster(g) {
+  const firstSel = g.outputs.find(o => o.selected);
+  g.outputs.forEach(o => o.isMaster = (o.selected && o === firstSel));
+}
+function canStart(g) {
+  return g.inputs.some(i => i.selected) && g.outputs.some(o => o.selected);
+}
+function getG(gid) { return groups.find(g => g.gid === gid); }
+function getDev(g, uid) {
+  return g.inputs.find(d => d.uid === uid) || g.outputs.find(d => d.uid === uid);
+}
+function isIn(g, uid) { return !!g.inputs.find(d => d.uid === uid); }
+
+/* ============================ 列表渲染 ============================ */
+const listEl = document.getElementById("groupList");
+const statusEl = document.getElementById("statusText");
+const runningIndEl = document.getElementById("runningInd");
+const totalCountEl = document.getElementById("totalCount");
+const runCountEl = document.getElementById("runCount");
+
+function peakBars(devs, maxBars = 8) {
+  const selected = devs.filter(d => d.selected).slice(0, maxBars);
+  if (selected.length === 0) return '<span style="opacity:0.3;font-size:10px">—</span>';
+  return selected.map(d => {
+    const h = Math.round(Math.min(1, d.muted ? 0 : d.peakLevel) * 100);
+    return `<div class="peak-mini"><div style="height:${h}%"></div></div>`;
+  }).join("");
+}
+
+function renderList() {
+  listEl.innerHTML = groups.length === 0
+    ? `<div class="empty-list">还没有方块，点顶部「+ 添加方块」创建第一个。</div>`
+    : groups.map(g => {
+        const inN = g.inputs.filter(i => i.selected).length;
+        const outN = g.outputs.filter(o => o.selected).length;
+        const peakSel = g.inputs.filter(i => i.selected);
+        const avgPeak = peakSel.length === 0 ? 0
+          : peakSel.reduce((a,b) => a + (b.muted ? 0 : b.peakLevel), 0) / peakSel.length;
+        return `
+          <div class="group-row ${g.running ? "running" : ""}" data-gid="${g.gid}">
+            <div class="row-dot"></div>
+            <div class="row-main">
+              <div class="row-name" style="cursor:pointer" data-act="edit" title="点击打开详情">
+                ${escapeHtml(g.name)}
+              </div>
+              <div class="row-badges">
+                <span class="badge in">输入 ${inN}</span>
+                <span class="badge out">输出 ${outN}</span>
+                ${g.running ? `<span class="badge st">运行中</span>` : `<span class="badge sp">未启动</span>`}
+              </div>
+              <div class="row-peak-preview">
+                ${peakBars(g.inputs, 8)}
+                <span class="peak-summary">${Math.round(avgPeak*100)}%</span>
+              </div>
+            </div>
+            <button class="btn btn-start" data-act="start" ${g.running || !canStart(g) ? "disabled" : ""} title="快速启动">▶</button>
+            <button class="btn btn-stop"  data-act="stop"  ${!g.running ? "disabled" : ""} title="快速停止">■</button>
+            <button class="btn btn-edit"  data-act="edit"  title="编辑详情">✎ 编辑</button>
+            <button class="btn btn-del"   data-act="del"   title="删除">✕</button>
+          </div>`;
+      }).join("");
+
+  totalCountEl.textContent = groups.length;
+  runCountEl.textContent = groups.filter(g => g.running).length;
+  runningIndEl.textContent = "运行中: " + (runCountEl.textContent > 0);
+  statusEl.textContent = `就绪：共 ${groups.length} 个方块，${runCountEl.textContent} 个运行中（Mock 预览）`;
+
+  document.getElementById("btnStartAll").disabled =
+    !groups.some(g => !g.running && canStart(g));
+  document.getElementById("btnStopAll").disabled =
+    !groups.some(g => g.running);
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+  }[c]));
+}
+
+/* ============================ 列表交互 ============================ */
+listEl.addEventListener("click", (e) => {
+  const row = e.target.closest(".group-row");
+  if (!row) return;
+  const g = getG(row.dataset.gid);
+  if (!g) return;
+  const actEl = e.target.closest("[data-act]");
+  const act = actEl ? actEl.dataset.act
+                    : (e.target.closest(".row-name") ? "edit" : null);
+  if (!act) return;
+  switch (act) {
+    case "edit":  openModal(g.gid); break;
+    case "start": startGroup(g); renderList(); break;
+    case "stop":  stopGroup(g);  renderList(); break;
+    case "del":
+      if (g.running && !confirm(`删除方块"${g.name}"？该方块正在运行。`)) return;
+      groups = groups.filter(x => x !== g);
+      renderList();
+      break;
+  }
+});
+
+/* ============================ Modal 弹窗 ============================ */
+const mask = document.getElementById("modalMask");
+const modal = document.getElementById("modal");
+const mName = document.getElementById("modalName");
+const mRunLabel = document.getElementById("modalRunLabel");
+const mStart = document.getElementById("modalStartBtn");
+const mStop  = document.getElementById("modalStopBtn");
+const mClose = document.getElementById("modalCloseBtn");
+const mCancel = document.getElementById("modalCancelBtn");
+const mSave  = document.getElementById("modalSaveBtn");
+const mDel   = document.getElementById("modalDeleteBtn");
+const mInList = document.getElementById("modalInputs");
+const mOutList = document.getElementById("modalOutputs");
+const mErr = document.getElementById("modalError");
+const mSum = document.getElementById("modalSummary");
+
+let activeGid = null;
+
+function nameTags(d, isInput) {
+  let s = "";
+  if (d.loopback) s += '<span class="tag tag-loop">Loopback</span>';
+  if (d.def) s += '<span class="tag tag-default">★默认</span>';
+  if (d.cable) s += isInput
+    ? '<span class="tag tag-cable">虚拟线-OUT</span>'
+    : '<span class="tag tag-cable">虚拟线-IN</span>';
+  if (d.isMaster) s += '<span class="tag tag-master">主</span>';
+  return s;
+}
+
+function renderDeviceRow(d, isInput) {
+  const volPct = Math.round(d.volume * 100);
+  const botRight = isInput
+    ? `<div class="peak-meter"><div class="peak-fill ${d.muted ? "muted" : ""}" style="width:${Math.round(Math.min(1,d.peakLevel)*100)}%"></div></div>`
+    : `<span class="buf-label">buf ${d.bufferedBytes}</span>`;
+  return `
+    <div class="device-row ${d.selected ? "selected" : ""}" data-uid="${d.uid}">
+      <div class="row-top">
+        <input type="checkbox" class="d-check" data-act="sel" ${d.selected ? "checked" : ""}/>
+        <div class="d-name" title="${escapeHtml(d.name)}">${escapeHtml(d.name)}${nameTags(d, isInput)}</div>
+        <label class="mute"><input type="checkbox" data-act="mute" ${d.muted ? "checked" : ""}/> 静音</label>
+      </div>
+      <div class="row-bot">
+        <input type="range" class="vol-slider" min="0" max="200" value="${volPct}" data-act="vol"/>
+        <span class="vol-pct">${volPct}%</span>
+        ${botRight}
+      </div>
+    </div>`;
+}
+
+function openModal(gid) {
+  const g = getG(gid);
+  if (!g) return;
+  activeGid = gid;
+  renderModal();
+  mask.classList.add("show");
+}
+function closeModal() {
+  activeGid = null;
+  mask.classList.remove("show");
+  renderList(); // 关闭同步列表摘要
+}
+function renderModal() {
+  const g = getG(activeGid);
+  if (!g) return;
+  modal.classList.toggle("running", !!g.running);
+  modal.classList.toggle("has-error", !!g.error);
+  mName.value = g.name;
+  mRunLabel.textContent = g.running ? "● 运行中" : "○ 已停止";
+  mStart.disabled = g.running || !canStart(g);
+  mStop.disabled  = !g.running;
+  mErr.textContent = g.error || "";
+
+  mInList.innerHTML  = g.inputs.length === 0
+    ? `<div class="d-empty">无输入设备</div>`
+    : g.inputs.map(d => renderDeviceRow(d, true)).join("");
+  mOutList.innerHTML = g.outputs.length === 0
+    ? `<div class="d-empty">无输出设备</div>`
+    : g.outputs.map(d => renderDeviceRow(d, false)).join("");
+
+  const inN = g.inputs.filter(i => i.selected).length;
+  const outN = g.outputs.filter(o => o.selected).length;
+  mSum.textContent = `输入 ${inN} · 输出 ${outN}${g.running ? " · 运行中" : ""}`;
+}
+
+/* Modal 顶部按钮 */
+mStart.addEventListener("click", () => {
+  const g = getG(activeGid); if (!g) return;
+  startGroup(g); renderModal(); renderList();
+});
+mStop.addEventListener("click", () => {
+  const g = getG(activeGid); if (!g) return;
+  stopGroup(g); renderModal(); renderList();
+});
+mDel.addEventListener("click", () => {
+  const g = getG(activeGid); if (!g) return;
+  if (g.running && !confirm(`删除方块"${g.name}"？该方块正在运行。`)) return;
+  groups = groups.filter(x => x !== g);
+  closeModal();
+});
+mClose.addEventListener("click", closeModal);
+mCancel.addEventListener("click", closeModal);
+mSave.addEventListener("click", closeModal);
+mask.addEventListener("click", (e) => { if (e.target === mask) closeModal(); });
+
+/* Modal 内输入框改名字 */
+mName.addEventListener("input", () => {
+  const g = getG(activeGid); if (!g) return;
+  g.name = mName.value;
+});
+
+/* Modal 内设备项交互（委托） */
+function modalAct(ev, act) {
+  const g = getG(activeGid); if (!g) return;
+  const row = ev.target.closest(".device-row"); if (!row) return;
+  const d = getDev(g, row.dataset.uid); if (!d) return;
+  const isInput = isIn(g, d.uid);
+  switch (act) {
+    case "sel":
+      d.selected = ev.target.checked;
+      if (!isInput) refreshMaster(g);
+      // 同步启动按钮禁用态
+      mStart.disabled = g.running || !canStart(g);
+      break;
+    case "mute":
+      d.muted = ev.target.checked;
+      break;
+  }
+  renderModal(); // 重渲染（保持模态框开启）
+}
+
+mInList.addEventListener("click", (e) => {
+  const el = e.target.closest("[data-act]"); if (!el) return;
+  if (el.dataset.act === "sel" || el.dataset.act === "mute") modalAct(e, el.dataset.act);
+});
+mOutList.addEventListener("click", (e) => {
+  const el = e.target.closest("[data-act]"); if (!el) return;
+  if (el.dataset.act === "sel" || el.dataset.act === "mute") modalAct(e, el.dataset.act);
+});
+
+function modalVol(ev) {
+  const g = getG(activeGid); if (!g) return;
+  const row = ev.target.closest(".device-row"); if (!row) return;
+  const d = getDev(g, row.dataset.uid); if (!d) return;
+  const v = parseInt(ev.target.value, 10);
+  d.volume = v / 100;
+  const lbl = row.querySelector(".vol-pct"); if (lbl) lbl.textContent = v + "%";
+}
+mInList.addEventListener("input", (e) => {
+  if (e.target.dataset.act === "vol") modalVol(e);
+});
+mOutList.addEventListener("input", (e) => {
+  if (e.target.dataset.act === "vol") modalVol(e);
+});
+
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && mask.classList.contains("show")) closeModal();
+});
+
+/* ============================ 启停逻辑 ============================ */
+function startGroup(g) {
+  if (g.running) return;
+  if (!canStart(g)) { g.error = "至少勾选一个输入和一个输出才能启动"; return; }
+  g.error = null;
+  refreshMaster(g);
+  g.running = true;
+}
+function stopGroup(g) {
+  if (!g.running) return;
+  g.running = false;
+  g.inputs.forEach(d => d.peakLevel = 0);
+  g.outputs.forEach(d => d.bufferedBytes = 0);
+}
+
+/* ============================ 顶部按钮 ============================ */
+document.getElementById("btnAddGroup").addEventListener("click", () => {
+  const g = mkGroup(`✨ 新方块 ${groups.length + 1}`, false,
+    IN_POOL.map(p => ({pid:p.id, selected:false, volume:1.0, muted:false})),
+    OUT_POOL.map(p => ({pid:p.id, selected:false, volume:1.0, muted:false})));
+  groups.push(g);
+  renderList();
+});
+document.getElementById("btnStartAll").addEventListener("click", () => {
+  let n = 0;
+  groups.forEach(g => { if (!g.running && canStart(g)) { startGroup(g); n++; } });
+  renderList();
+  flashStatus(n > 0 ? `已启动 ${n} 个方块（Mock）` : "无可启动的方块");
+});
+document.getElementById("btnStopAll").addEventListener("click", () => {
+  let n = 0;
+  groups.forEach(g => { if (g.running) { stopGroup(g); n++; } });
+  renderList();
+  flashStatus(n > 0 ? `已停止 ${n} 个方块（Mock）` : "当前无运行中方块");
+});
+document.getElementById("btnRefresh").addEventListener("click", () => {
+  flashStatus("已刷新设备列表（Mock）");
+});
+document.getElementById("btnSaveProfile").addEventListener("click", () => {
+  const sel = document.getElementById("profileSelect");
+  const name = document.getElementById("profileName").value.trim() || "未命名";
+  if (!Array.from(sel.options).some(o => o.value === name)) {
+    const o = document.createElement("option");
+    o.value = name; o.textContent = name; o.selected = true;
+    sel.appendChild(o);
+  } else {
+    sel.value = name;
+  }
+  flashStatus(`[Mock] 已保存方案：${name}（${groups.length} 个方块）`);
+});
+document.getElementById("btnLoadProfile").addEventListener("click", () => {
+  const name = document.getElementById("profileSelect").value;
+  document.getElementById("profileName").value = name;
+  flashStatus(`[Mock] 已加载方案：${name}`);
+});
+function flashStatus(msg) {
+  const prev = statusEl.textContent;
+  statusEl.textContent = msg;
+  setTimeout(renderList, 2200);
+}
+
+/* ============================ 电平动画 ============================ */
+function rand(a, b) { return a + Math.random() * (b - a); }
+
+setInterval(() => {
+  let anyDirty = false;
+  groups.forEach(g => {
+    if (!g.running) return;
+    anyDirty = true;
+    g.inputs.forEach(d => {
+      if (!d.selected) return;
+      if (d.muted) { d.peakLevel = Math.max(0, d.peakLevel - 0.05); return; }
+      const base = d.loopback ? 0.5 : (d.name.includes("麦克风") ? 0.3 : 0.18);
+      d.peakLevel = Math.min(1, Math.max(0.02, base + rand(-0.18, 0.22)));
+    });
+    g.outputs.forEach(d => {
+      if (!d.selected) return;
+      d.bufferedBytes = Math.floor(rand(12000, 48000));
+    });
+  });
+
+  if (!anyDirty) return;
+
+  /* 列表摘要：直接更新 DOM 避免整体重渲染闪烁 */
+  listEl.querySelectorAll(".group-row").forEach(row => {
+    const g = getG(row.dataset.gid); if (!g) return;
+    row.classList.toggle("running", g.running);
+
+    const badges = row.querySelectorAll(".badge");
+    const inSelN = g.inputs.filter(i => i.selected).length;
+    const outSelN = g.outputs.filter(o => o.selected).length;
+    if (badges[0]) badges[0].textContent = `输入 ${inSelN}`;
+    if (badges[1]) badges[1].textContent = `输出 ${outSelN}`;
+    if (badges[2]) {
+      badges[2].textContent = g.running ? "运行中" : "未启动";
+      badges[2].className = "badge " + (g.running ? "st" : "sp");
+    }
+
+    /* 每行按钮禁用态 */
+    const rowName = row.querySelector(".row-name");
+    if (rowName) rowName.textContent = g.name;
+
+    const peakSel = g.inputs.filter(i => i.selected);
+    const avgPeak = peakSel.length === 0 ? 0
+      : peakSel.reduce((a,b) => a + (b.muted ? 0 : b.peakLevel), 0) / peakSel.length;
+    const peakWrap = row.querySelector(".row-peak-preview");
+    if (peakWrap) {
+      peakWrap.innerHTML =
+        peakSel.slice(0, 8).map(d => {
+          const h = Math.round(Math.min(1, d.muted ? 0 : d.peakLevel) * 100);
+          return `<div class="peak-mini"><div style="height:${h}%"></div></div>`;
+        }).join("") +
+        `<span class="peak-summary">${Math.round(avgPeak*100)}%</span>`;
+      if (peakSel.length === 0) {
+        peakWrap.innerHTML = '<span style="opacity:0.3;font-size:10px">—</span>';
+      }
+    }
+
+    const btns = row.querySelectorAll("button[data-act]");
+    btns.forEach(b => {
+      const a = b.dataset.act;
+      if (a === "start") b.disabled = g.running || !canStart(g);
+      if (a === "stop")  b.disabled = !g.running;
+    });
+  });
+
+  /* 运行中 Modal 也要刷新峰值/缓冲 */
+  if (activeGid) {
+    const g = getG(activeGid);
+    if (g && g.running) {
+      // 仅更新值，不重渲染（避免 focus 丢失）
+      g.inputs.forEach(d => {
+        const row = mInList.querySelector(`.device-row[data-uid="${d.uid}"]`);
+        if (!row) return;
+        const fill = row.querySelector(".peak-fill");
+        if (fill) {
+          fill.style.width = Math.round(Math.min(1, d.peakLevel) * 100) + "%";
+          fill.classList.toggle("muted", d.muted);
+        }
+      });
+      g.outputs.forEach(d => {
+        const row = mOutList.querySelector(`.device-row[data-uid="${d.uid}"]`);
+        if (!row) return;
+        const lbl = row.querySelector(".buf-label");
+        if (lbl) lbl.textContent = "buf " + d.bufferedBytes;
+      });
+    }
+  }
+
+  /* 顶部摘要 */
+  const rN = groups.filter(g => g.running).length;
+  runCountEl.textContent = rN;
+  runningIndEl.textContent = "运行中: " + (rN > 0);
+  document.getElementById("btnStartAll").disabled = !groups.some(g => !g.running && canStart(g));
+  document.getElementById("btnStopAll").disabled  = rN === 0;
+}, 120);
+
+/* 首次渲染 */
+renderList();
+</script>
+</body>
+</html>
